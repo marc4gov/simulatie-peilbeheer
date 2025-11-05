@@ -6,18 +6,21 @@
       <div class="flex justify-between items-start">
         <div class="flex-1">
           <h2 class="text-lg font-semibold text-gray-800 mb-4">{{ polderData.name }}</h2>
-          <div class="flex gap-4 text-sm text-gray-600 mb-4">
+          <div class="flex flex-col gap-2 text-sm text-gray-600 mb-4">
             <div>
               <span class="font-medium">Jaar:</span> {{ currentYear }}
             </div>
             <div>
-              <span class="font-medium">Drooglegging:</span> {{ currentDrooglegging.toFixed(1) }}cm
+              <span class="font-medium">Drooglegging:</span> {{ currentYearData.drooglegging.toFixed(1) }} cm
+            </div>
+            <div>
+              <span class="font-medium">Ondergrens zomerpeil:</span> {{ (currentYearData.zomerpeil_ondergrens / 100).toFixed(2) }} m NAP
             </div>
           </div>
         </div>
         <button 
           @click="$emit('close')"
-          class="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100 transition-colors ml-4"
+          class="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100 transition-colors ml-4 cursor-pointer"
         >
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -48,7 +51,7 @@
           opacity="0.8"
         />
         
-        <!-- Mineral layer (light brown/sand) - below peat, 100cm thick -->
+        <!-- Mineral layer (light brown/sand) - below peat -->
         <rect 
           x="0" 
           :y="mineralLayerTop" 
@@ -64,15 +67,15 @@
           :y1="reference2025Level" 
           x2="500" 
           :y2="reference2025Level" 
-          stroke="#10b981" 
+          stroke="#0A1" 
           stroke-width="2"
           stroke-dasharray="10,5"
         />
         <text 
           x="10" 
           :y="reference2025Level - 8" 
-          fill="#10b981" 
-          font-size="14" 
+          fill="#0A1" 
+          font-size="16" 
           font-weight="bold"
         >
           Maaiveld 2025
@@ -84,7 +87,7 @@
           :y1="currentSurfaceLevel" 
           x2="200" 
           :y2="currentSurfaceLevel" 
-          stroke="#22c55e" 
+          stroke="#0A1" 
           stroke-width="4"
         />
         <line 
@@ -92,7 +95,7 @@
           :y1="currentSurfaceLevel" 
           x2="500" 
           :y2="currentSurfaceLevel" 
-          stroke="#22c55e" 
+          stroke="#0A1" 
           stroke-width="4"
         />
         
@@ -106,7 +109,7 @@
         <!-- Water in sloot -->
         <polygon 
           :points="waterPolygonPoints"
-          fill="#3b82f6"
+          fill="#0083F1"
           opacity="0.7"
         />
         
@@ -122,7 +125,7 @@
             :y1="currentSurfaceLevel" 
             :x2="i * 8 + (Math.sin(i) * 3)" 
             :y2="currentSurfaceLevel - 8 - (Math.cos(i) * 3)" 
-            stroke="#22c55e" 
+            stroke="#0A1" 
             stroke-width="2"
           />
         </g>
@@ -132,7 +135,7 @@
             :y1="currentSurfaceLevel" 
             :x2="300 + i * 8 + (Math.sin(i) * 3)" 
             :y2="currentSurfaceLevel - 8 - (Math.cos(i) * 3)" 
-            stroke="#22c55e" 
+            stroke="#0A1" 
             stroke-width="2"
           />
         </g>
@@ -151,10 +154,22 @@
           x="55" 
           :y="(currentSurfaceLevel + currentWaterLevel) / 2 + 5" 
           fill="#ffffff" 
-          font-size="18" 
+          font-size="16" 
           font-weight="bold"
         >
-          {{ currentDrooglegging.toFixed(1) }}cm
+          {{ currentYearData.drooglegging.toFixed(1) }}cm
+        </text>
+        
+        <!-- NAP value display under water level (in meters, no "NAP" text) -->
+        <text 
+          x="250" 
+          :y="currentWaterLevel + 25" 
+          fill="#1e40af" 
+          font-size="16" 
+          font-weight="bold"
+          text-anchor="middle"
+        >
+          {{ (currentYearData.zomerpeil_ondergrens / 100).toFixed(2) }} m
         </text>
       </svg>
     </div>
@@ -182,72 +197,55 @@ const props = defineProps({
 const emit = defineEmits(['close'])
 
 // Constants
-const baselineY = 50 // Base surface level for 2025
-const pixelsPerCm = 0.8 // Scale factor
+const baselineY = 50
+const pixelsPerCm = 0.8
 
-// Get current year data from the yearly calculations
-const getCurrentYearData = () => {
-  if (props.polderData.yearlyData && props.polderData.yearlyData[props.peilindexatie]) {
-    return props.polderData.yearlyData[props.peilindexatie][props.currentYear] || {
-      peatThickness: 200,
-      waterHeight: 60,
-      drooglegging: props.polderData.drooglegging
-    }
-  }
-  // Fallback to initial values if no yearly data
-  return {
-    peatThickness: 200,
-    waterHeight: 60,
-    drooglegging: props.polderData.drooglegging
-  }
-}
+// Get current year data using the polder's getYearData method
+const currentYearData = computed(() => {
+  return props.polderData.getYearData(props.currentYear, props.peilindexatie)
+})
 
-// Reactive current year data
-const currentYearData = computed(() => getCurrentYearData())
+// Calculate peat thickness for current year (200cm - 0.7cm per year)
+const currentPeatThickness = computed(() => {
+  return 200 - (props.currentYear - 2025) * 0.7
+})
 
-// 2025 reference level - top of peat layer in 2025
+// 2025 reference level
 const reference2025Level = computed(() => baselineY)
 
-// Current surface level - moves down as peat shrinks
-const totalPeatLoss = computed(() => 200 - currentYearData.value.peatThickness)
+// Current surface level moves down as peat shrinks
+const totalPeatLoss = computed(() => 200 - currentPeatThickness.value)
 const currentSurfaceLevel = computed(() => reference2025Level.value + (totalPeatLoss.value * pixelsPerCm))
 
-// Peat layer - shrinks from bottom, top follows surface
-const currentPeatLayerHeight = computed(() => currentYearData.value.peatThickness * pixelsPerCm)
+// Peat layer
+const currentPeatLayerHeight = computed(() => currentPeatThickness.value * pixelsPerCm)
 const currentPeatLayerTop = computed(() => currentSurfaceLevel.value)
 
-// Mineral layer - below peat layer
+// Mineral layer
 const mineralLayerTop = computed(() => currentPeatLayerTop.value + currentPeatLayerHeight.value)
 
 // Water level - drooglegging distance below surface
 const currentWaterLevel = computed(() => currentSurfaceLevel.value + (currentYearData.value.drooglegging * pixelsPerCm))
 
-// Ditch dimensions - depth = drooglegging + water height
-const ditchDepth = computed(() => currentYearData.value.drooglegging + currentYearData.value.waterHeight)
+// Ditch dimensions - depth = drooglegging + water height (60cm constant)
+const waterHeight = 60
+const ditchDepth = computed(() => currentYearData.value.drooglegging + waterHeight)
 const slootBottom = computed(() => currentSurfaceLevel.value + (ditchDepth.value * pixelsPerCm))
 
 // Water polygon for the ditch
 const waterPolygonPoints = computed(() => {
-  const waterHeight = currentYearData.value.waterHeight
-  
-  if (waterHeight <= 0) return "" // No water if height is 0
-  
-  // Water fills from bottom of ditch upward by waterHeight
+  if (waterHeight <= 0) return ""
+
   const waterTop = slootBottom.value - (waterHeight * pixelsPerCm)
   const waterBottom = slootBottom.value
-  
-  // Calculate water surface width based on ditch slope
+
   const ditchTotalDepth = ditchDepth.value * pixelsPerCm
   const waterDepthFromSurface = waterTop - currentSurfaceLevel.value
   const ratioFromSurface = Math.abs(waterDepthFromSurface) / ditchTotalDepth
-  
-  // Ditch goes from 200-300 at surface to 220-280 at bottom
+
   const leftX = 200 + (20 * ratioFromSurface)
   const rightX = 300 - (20 * ratioFromSurface)
-  
+
   return `${leftX},${waterTop} ${rightX},${waterTop} 280,${waterBottom} 220,${waterBottom}`
 })
-
-// Current drooglegging for display
-const currentDrooglegging = computed(() => currentYearData.value.drooglegging)
 </script>

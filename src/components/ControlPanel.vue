@@ -17,7 +17,7 @@
           :class="[
             'flex-1 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer',
             selectedPeilindexatie === preset
-              ? 'bg-blue-600 text-white'
+              ? 'bg-[#0083F1] text-white'
               : 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200'
           ]"
         >
@@ -51,7 +51,7 @@
     <div class="flex items-center justify-center">
       <button 
         @click="togglePlay"
-        class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm font-medium transition-colors cursor-pointer flex flex-row items-center"
+        class="px-4 py-2 bg-[#0083F1] hover:bg-blue-600 text-white rounded text-sm font-medium transition-colors cursor-pointer flex flex-row items-center"
       >
         <div class="mr-2">
           <svg v-if="!isPlaying" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="size-4">
