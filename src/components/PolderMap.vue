@@ -9,7 +9,7 @@
     </a>
 
     <!-- Legend -->
-    <div class="fixed top-24 left-4 bg-white rounded-lg shadow-2xl border border-gray-200 p-4 z-20">
+    <div class="fixed top-4 left-4 bg-white rounded-lg shadow-2xl border border-gray-200 p-4 z-20">
       <h4 class="text-sm font-semibold text-gray-800 mb-3">Drooglegging</h4>
       <div class="space-y-2">
         <div class="flex items-center gap-2">
@@ -44,7 +44,7 @@
     <!-- Animation Panel -->
     <div
       v-if="selectedPolder != null"
-      class="fixed top-80 bottom-4 right-4 w-80 flex justify-center items-center z-50"
+      class="fixed top-4 bottom-4 right-4 w-80 flex justify-center items-center z-50"
     >
       <div class="w-full h-full">
         <AnimationPanel
